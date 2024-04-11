@@ -79,7 +79,10 @@ def exam(token, week, mode, delay):
     elif mode == '1':
         print("开始考试")
     url = f"https://skl.hdu.edu.cn/api/paper/new?type={mode}&week={week}&startTime=" + str(int(startTime*1000))
-    r = requests.get(url, headers=getHeaders(token)) # 获取题目
+    headers = getHeaders(token)
+    # 考试需要手机的UA
+    headers["User-Agent"] = "Mozilla/5.0 (Linux; Android 4.2.1; M040 Build/JOP40D) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.59 Mobile Safari/537.36"
+    r = requests.get(url, headers=headers) # 获取题目
     paper = json.loads(r.text)
     ans = getAnswer(paper)
     paperId = ans["paperId"]
@@ -190,7 +193,7 @@ def main():
             if delay < 300 or delay > 480:
                 print("数据不在建议范围内，已帮您设置成450")
                 delay = 450
-            print(f"需要等待时间为{delay/60}分{delay%60}秒")  
+            print(f"需要等待时间为{delay//60}分{delay%60}秒")  
             break
         except:
             print("输入数据有误！请重新输入！")
