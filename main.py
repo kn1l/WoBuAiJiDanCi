@@ -194,9 +194,10 @@ def main():
             mode = input("请选择模式自测(0)/考试(1): ")
             assert mode == '0' or mode == '1'
             delay = int(input("输入做题时间(s)建议范围300-480或者0(不用等待自测用): ")) # 450 = 7min30s
-            if delay < 300 or delay > 480 or delay != 0:
-                print("数据不在建议范围内，已帮您设置成450")
-                delay = 450
+            if delay < 300 or delay > 480:
+                if delay !=0:
+                    print("数据不在建议范围内，已帮您设置成450")
+                    delay = 450
             print(f"需要等待时间为{delay//60}分{delay%60}秒")  
             break
         except:
