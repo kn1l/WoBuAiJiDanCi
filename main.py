@@ -5,6 +5,7 @@ import re
 import time
 import os
 import platform
+import getpass
 
 def getHeaders(token):
     ticket = execjs.compile("""const NL = 'useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict';
@@ -173,7 +174,7 @@ def main():
     while True:
         try:
             un = input("请输入学号: ")
-            pd = input("请输入密码: ")
+            pd = getpass.getpass("请输入密码: ")
             print("登录中...请稍后...")
             command = 'cls' if platform.system().lower() == 'windows' else 'clear'  
             os.system(command)  
