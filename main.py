@@ -170,11 +170,37 @@ def check(paper):
     print("right:", right)
     
 
+def makeWordbank(token):
+    # 爬取自测列表 构建题库
+    headers=getHeaders(token)
+    url = f'https://skl.hdu.edu.cn/api/paper/list?type=0&week={6}&schoolYear={"2023-2024"}&semester={"2"}'
+    r = requests.get(url, headers=headers)
+    li = json.loads(r.text)
+    with open("wordBank.json", "r", encoding='utf-8') as f:
+        wordList = json.load(f)
+    for i in li:
+        paperId = i["paperId"]
+        url = f'https://skl.hdu.edu.cn/api/paper/detail?paperId={paperId}'
+        r = requests.get(url,) # 测试发现不需要认证身份
+        paper = json.loads(r.text)
+        for question in paper["list"]:
+            title = question["title"].replace(" ", "").replace(".", "")
+            if str(question["answer"]) in "ABCD":
+                answer = question["answer"+question["answer"]].replace(" ", "").replace(".", "")
+                word = {
+                    title:answer
+                }
+                if word not in wordList:
+                    wordList.append(word)
+    with open("wordBank.json", "w", encoding='utf-8') as f:
+        f.write(json.dumps(wordList))
+
+
 def main():
     while True:
         try:
             un = input("请输入学号: ")
-            pd = getpass.getpass("请输入密码: ")
+            pd = getpass.getpass("请输入密码(输入时不会显示任何字符): ")
             print("登录中...请稍后...")
             command = 'cls' if platform.system().lower() == 'windows' else 'clear'  
             os.system(command)  
