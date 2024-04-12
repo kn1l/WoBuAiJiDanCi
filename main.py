@@ -4,6 +4,7 @@ import execjs
 import re
 import time
 import os
+import platform
 
 def getHeaders(token):
     ticket = execjs.compile("""const NL = 'useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict';
@@ -60,7 +61,6 @@ def login(username, password):
     token = re.findall(r'token=.+&', location)[0][6:-1]
     headers = getHeaders(token)
     r = requests.get("https://skl.hdu.edu.cn/api/userinfo?type=&index=", headers=headers)
-    os.system("cls")
     print("登录成功！你好，"+json.loads(r.text)["userName"])
     return token
 
@@ -87,7 +87,7 @@ def exam(token, week, mode, delay):
     ans = getAnswer(paper)
     paperId = ans["paperId"]
 
-    print("等待提交中...")
+    print("等待提交中...请不要关闭终端...")
     time.sleep(delay)
     r = requests.post("https://skl.hdu.edu.cn/api/paper/save", json=ans, headers=getHeaders(token)) # 不知道为什么这里json=json.dumps(ans)会400
     print("提交成功！")
@@ -156,6 +156,7 @@ def getAnswer(paper):
 
 
 def check(paper):
+    # 测试用的验证程序
 
     ans = getAnswer(paper)       
     # print(ans)
@@ -173,6 +174,9 @@ def main():
         try:
             un = input("请输入学号: ")
             pd = input("请输入密码: ")
+            print("登录中...请稍后...")
+            command = 'cls' if platform.system().lower() == 'windows' else 'clear'  
+            os.system(command)  
             token = login(un, pd)
             break
         except:
@@ -183,14 +187,14 @@ def main():
         print(f"本周是第{week}周")
     except:
         print("自动获取周数失败！")
-        week = input("请输入本周是第几周(1/2/3/...): ")
+        week = 0 # 周数不准确影响不大
 
     while True:
         try:
             mode = input("请选择模式自测(0)/考试(1): ")
             assert mode == '0' or mode == '1'
-            delay = int(input("输入做题时间(s)建议范围300-480: ")) # 450 = 7min30s
-            if delay < 300 or delay > 480:
+            delay = int(input("输入做题时间(s)建议范围300-480或者0(不用等待自测用): ")) # 450 = 7min30s
+            if delay < 300 or delay > 480 or delay != 0:
                 print("数据不在建议范围内，已帮您设置成450")
                 delay = 450
             print(f"需要等待时间为{delay//60}分{delay%60}秒")  
