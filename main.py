@@ -6,18 +6,23 @@ import time
 import os
 import platform
 import getpass
+import random
 
 def getHeaders(token):
-    ticket = execjs.compile("""const NL = 'useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict';
-function ticket(e=21){
-    let t = ""
-      , r = crypto.getRandomValues(new Uint8Array(e));
-    for (; e--; )
-        t += NL[r[e] & 63];
-    return t
-}
-""").call("ticket") # from vendor-Dano3rOA.js
-    
+    ticket = ""
+    NL = 'useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict'
+#     ticket = execjs.compile("""const NL = 'useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict';
+# function ticket(e=21){
+#     let t = ""
+#       , r = crypto.getRandomValues(new Uint8Array(e));
+#     for (; e--; )
+#         t += NL[r[e] & 63];
+#     return t
+# }
+# """).call("ticket") # from vendor-Dano3rOA.js
+    # 因为上面程序可能报错所以用Python随便重写一下
+    for i in range (21):
+        ticket += random.choice(NL)
     headers = {
         'Skl-Ticket': ticket, # 实际测试发现skl-ticket好像没什么用(?
         'X-Auth-Token': token,
@@ -55,6 +60,8 @@ def login(username, password):
         "_eventId": "submit",
     }
     r = s.post(csaurl, data=data, allow_redirects=False) # 禁止重定向是必要的
+    if r.status_code != 302:
+        raise 
     castgc = s.cookies["CASTGC"] # 没研究过有什么用
     location = r.headers["Location"]
     r = s.get(location, allow_redirects=False)
@@ -206,8 +213,16 @@ def main():
             os.system(command)  
             token = login(un, pd)
             break
+        except KeyboardInterrupt:
+            exit()
+        except RuntimeError:
+            print("请检查本次输入")
+            print("账号:", un)
+            print("密码:", pd)
+            print("用户名或密码错误！(输入错误多次会导致禁止登录一段时间，请访问 https://skl.hduhelp.com/#/english/list 查看是否可以正常登录)")
+            print("按下ctrl+C退出")
         except:
-            print("用户名或密码错误！(如果尝试多次请访问 https://skl.hduhelp.com/#/english/list 查看是否可以正常登录)")
+            raise
         
     try:
         week = getWeek(token)
@@ -227,8 +242,12 @@ def main():
                     delay = 450
             print(f"需要等待时间为{delay//60}分{delay%60}秒")  
             break
-        except:
+        except KeyboardInterrupt:
+            exit()
+        except AssertionError:
             print("输入数据有误！请重新输入！")
+        except:
+            raise
     exam(token, week, mode, delay)
 
 
