@@ -99,6 +99,7 @@ def exam(token, week, mode, delay):
     time.sleep(delay)
     r = requests.post("https://skl.hdu.edu.cn/api/paper/save", json=ans, headers=getHeaders(token)) # 不知道为什么这里json=json.dumps(ans)会400
     print("提交成功！")
+    time.sleep(0.5)
     url = f"https://skl.hdu.edu.cn/api/paper/detail?paperId={paperId}"
     r = requests.get(url, headers=getHeaders(token))
     print("本次成绩:", json.loads(r.text)["mark"])
@@ -237,7 +238,7 @@ def main():
             assert mode == '0' or mode == '1'
             delay = int(input("输入做题时间(s)建议范围300-480或者0(不用等待自测用): ")) # 450 = 7min30s
             if delay < 300 or delay > 480:
-                if delay !=0:
+                if not(mode == '0' and delay == 0):
                     print("数据不在建议范围内，已帮您设置成450")
                     delay = 450
             print(f"需要等待时间为{delay//60}分{delay%60}秒")  
