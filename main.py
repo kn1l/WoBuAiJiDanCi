@@ -225,12 +225,12 @@ def main():
         except:
             raise
         
-    try:
-        week = getWeek(token)
-        print(f"本周是第{week}周")
-    except:
-        print("自动获取周数失败！")
-        week = 0 # 周数不准确影响不大
+    # try:
+    #     week = getWeek(token)
+    #     print(f"本周是第{week}周")
+    # except:
+    #     print("自动获取周数失败！")
+    #     week = 0 # 周数不准确影响不大
 
     while True:
         try:
@@ -249,7 +249,7 @@ def main():
             print("输入数据有误！请重新输入！")
         except:
             raise
-    exam(token, week, mode, delay)
+    exam(token, 1, mode, delay)
 
 
 if __name__ == "__main__":
