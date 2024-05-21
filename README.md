@@ -12,7 +12,7 @@ HDU我爱记单词脚本
 
 ```
 pip install requests
-pip install PyExecJS
+pip install pycryptodome
 python main.py
 ```
 

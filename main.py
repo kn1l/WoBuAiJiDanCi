@@ -1,6 +1,5 @@
 import requests
 import json
-import execjs
 import re
 import time
 import os
@@ -8,9 +7,22 @@ import platform
 import getpass
 import random
 
+
+def DESencrypt(key, password): # key from base64
+    from Crypto.Cipher import DES
+    from Crypto.Util.Padding import pad
+    import base64
+    key = base64.b64decode(key)
+    password = password.encode()
+    cipher = DES.new(key, DES.MODE_ECB) 
+    password = pad(password, DES.block_size)
+    encText = cipher.encrypt(password)
+    return base64.b64encode(encText).decode()
+
+
 def getHeaders(token):
-    ticket = ""
-    NL = 'useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict'
+    # ticket = ""
+    # NL = 'useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict'
 #     ticket = execjs.compile("""const NL = 'useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict';
 # function ticket(e=21){
 #     let t = ""
@@ -20,12 +32,14 @@ def getHeaders(token):
 #     return t
 # }
 # """).call("ticket") # from vendor-Dano3rOA.js
-    # 因为上面程序可能报错所以用Python随便重写一下
-    for i in range (21):
-        ticket += random.choice(NL)
+    
+    # headers = {
+    #     'Skl-Ticket': ticket, 
+    #     'X-Auth-Token': token,
+    # }
+    # 不加ticket头也能过
     headers = {
-        'Skl-Ticket': ticket, # 实际测试发现skl-ticket好像没什么用(?
-        'X-Auth-Token': token,
+        'X-Auth-Token': token, 
     }
 
     return headers
@@ -33,40 +47,40 @@ def getHeaders(token):
 
 def login(username, password):
 
-    s = requests.Session()
-
     ul = str(len(username))
     pl = str(len(password))
 
     r = requests.get("https://skl.hdu.edu.cn/api/userinfo?type=&index=")
-    csaurl = r.json()['url'] # CASurl
+    casurl = r.json()['url'] # CASurl
+    r = requests.get(casurl, allow_redirects=False)
+    ssourl = r.headers['Location'] # SSO login url
 
-    r = s.get(csaurl) # 跳转CAS获取sessionid
-    i = re.search(r'"LT-.+"', r.text).span()
-    lt = r.text[i[0]+1:i[1]-1] # login token
-    i = re.search(r'name="execution" value=".+"', r.text).span()
-    execution = r.text[i[0]+24:i[1]-1]
+    # start login 
+    session = requests.Session()
+    r = session.get(ssourl)
+    # directly use regular expression to find out "cropto" and "execution"
+    key = re.findall(r'>.+<', re.findall(r'<p id="login-croypto">.+</p>', r.text)[0])[0][1 : -1]
+    execution = re.findall(r'>.+<', re.findall(r'<p id="login-page-flowkey">.+</p>', r.text)[0])[0][1 : -1]
 
-    with open("./des.js", "r", encoding="utf-8") as f:
-        context = execjs.compile(f.read())
-        rsa = context.call("strEnc", username+password+lt , '1' , '2' , '3')
 
     data = {
-        "rsa": rsa,
-        "ul": ul,
-        "pl": pl,
-        "lt": lt,
-        "execution": execution,
+        "username": username,
+        "type": "UsernamePassword", # <p id="current-login-type"> CONST
         "_eventId": "submit",
+        "geolocation": "",
+        "execution": execution, # <p id="login-page-flowkey"> 
+        "captcha_code": "",
+        "croypto": key, # <p id="login-croypto">
+        "password": DESencrypt(key, password), 
     }
-    r = s.post(csaurl, data=data, allow_redirects=False) # 禁止重定向是必要的
-    if r.status_code != 302:
-        raise 
-    castgc = s.cookies["CASTGC"] # 没研究过有什么用
+    session.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36", 
+                            "Content-Type": "application/x-www-form-urlencoded"})
+
+    r = session.post(ssourl, data=data, allow_redirects=False) # it is necessary to disallow redirects
     location = r.headers["Location"]
-    r = s.get(location, allow_redirects=False)
-    location = r.headers["Location"]
-    token = re.findall(r'token=.+&', location)[0][6:-1]
+    r = session.get(location)
+    # r.url -> like https://skl.hduhelp.com/#?token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx&t=timestamp
+    token = re.findall(r'token=.+&', r.url)[0][6:-1]
     headers = getHeaders(token)
     r = requests.get("https://skl.hdu.edu.cn/api/userinfo?type=&index=", headers=headers)
     print("登录成功！你好，"+json.loads(r.text)["userName"])
@@ -74,6 +88,7 @@ def login(username, password):
 
 
 def getWeek(token):
+    # 一个根据startTime获取周数的api
     headers = getHeaders(token)
 
     r = requests.get("https://skl.hdu.edu.cn/api/course?startTime=2024-04-08", headers=headers)
