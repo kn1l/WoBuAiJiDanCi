@@ -194,7 +194,7 @@ def check(paper):
     
 
 def makeWordbank(token):
-    # 爬取自测列表 构建题库
+    # 爬取自测列表 构建题库 待开发
     headers=getHeaders(token)
     url = f'https://skl.hdu.edu.cn/api/paper/list?type=0&week={6}&schoolYear={"2023-2024"}&semester={"2"}'
     r = requests.get(url, headers=headers)
